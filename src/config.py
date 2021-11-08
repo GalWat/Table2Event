@@ -12,6 +12,9 @@ settings = Dynaconf(
         ),
         Validator(
             'used_dbms', is_in=['mysql']
+        ),
+        Validator(
+            'endpoint_api', is_in=['amplitude']
         )
     ]
 )

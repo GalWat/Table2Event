@@ -2,12 +2,26 @@ from texttable import Texttable
 from datetime import datetime, date, time
 from src.endpoint_api.amplitude.event import Event
 from dataclasses import dataclass
+from enum import Enum
 
 
 from .db_joiner import DBJoiner
 
 
 POSSIBLE_DATES = {datetime, date, time}
+
+
+class DBManagementSystem(str, Enum):
+    MYSQL = 'mysql'
+
+
+class JoinModes(str, Enum):
+    ALL = 'all'
+    PAIRS = 'pairs'
+
+
+class EndpointApi(str, Enum):
+    AMPLITUDE = 'amplitude'
 
 
 @dataclass
