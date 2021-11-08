@@ -1,10 +1,9 @@
 # from itertools import product
 
 from src.config import settings
-from src.db_tools import DBJoiner, DBWorker
-from src.endpoint_api.amplitude_api import send_batch_events
+from src.db_tools import DBWorker
 
-db = DBWorker(DBJoiner(settings).query)
+db = DBWorker(settings.users_table, settings.user_id_column)
 db.print_query()
 
 pass

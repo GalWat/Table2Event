@@ -1,35 +1,26 @@
-from sqlalchemy import MetaData, create_engine
+from sqlalchemy import MetaData
 from sqlalchemy.orm import Session
+
+from .db_session import DBSession
 
 
 class DBJoiner:
-    def __init__(self, settings, main_table_name='employees'):
-        self.engine = create_engine(
-            f'mysql+mysqlconnector://'
-            f'{settings.mysql.login}'
-            f':'
-            f'{settings.mysql.password}'
-            f'@'
-            f'{settings.mysql.host}'
-            f'/'
-            f'{settings.mysql.db}',
-            echo=True
-        )
+    def __init__(self, users_table_name):
+        self.engine = DBSession.create_engine()
 
         self.meta = MetaData()
         self.meta.reflect(bind=self.engine)
 
         # TODO KM: set meta for testing
         self.tables = self.meta.tables
-
-        self.main_table = self.tables[main_table_name]
-        self.query = None
-
         self.add_backrefs()
+
+        self.main_table = self.tables[users_table_name]
+
         self.join_order = []
         self.columns = []
-        self.create_join_order()
-        self.join_table()
+
+        self.create_join_order_and_parse_columns()
 
     def add_backrefs(self):
         for table in self.tables.values():
@@ -51,7 +42,7 @@ class DBJoiner:
 
         return related
 
-    def create_join_order(self):
+    def create_join_order_and_parse_columns(self):
         self.join_order = [self.main_table]
 
         for table in self.join_order:
@@ -63,7 +54,9 @@ class DBJoiner:
         for col_list in temp_columns:
             self.columns.extend(col_list)
 
-    def join_table(self):
+    def join_all(self):
+        self.create_join_order_and_parse_columns()
+
         with Session(self.engine) as session:
             query = session.query(*self.columns)
 
@@ -87,4 +80,7 @@ class DBJoiner:
                     joined.append(relation)
                     query = query.join(relation, use_column[0] == use_column[1])
 
-            self.query = query
+            return query
+
+    def join_by_pairs(self):
+        pass

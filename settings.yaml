@@ -1,1 +1,6 @@
 ---
+used_dbms: "mysql"
+dbms_host: "localhost"
+database: "employees"
+users_table: "employees"
+user_id_column: "emp_no"

@@ -1,4 +1,4 @@
 
 # Ignore dynaconf secret files
-.secrets.*
+.secrets.yaml
 *.idea

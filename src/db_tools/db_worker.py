@@ -1,7 +1,11 @@
 from texttable import Texttable
 from datetime import datetime, date, time
-from src.endpoint_api.event import Event
+from src.endpoint_api.amplitude.event import Event
 from dataclasses import dataclass
+
+
+from .db_joiner import DBJoiner
+
 
 POSSIBLE_DATES = {datetime, date, time}
 
@@ -13,15 +17,16 @@ class EventTemplate:
 
 
 class DBWorker:
-    def __init__(self, query, user_id_column='employees.emp_no', main_table_name='employees'):
-        self.query = query
-        self.user_id_column = user_id_column
-        self.main_table_name = main_table_name
+    def __init__(self, users_table_name, user_id_column_name):
+        self.joiner = DBJoiner(users_table_name)
+        # FIXME: delete query
+        self.query = self.joiner.join_all()
+
+        self.user_id_column = f'{users_table_name}.{user_id_column_name}'
+        self.main_table_name = users_table_name
 
         self.raw_events = []
         self.user_properties_columns = []
-        self._generate_events()
-
 
     def print_query(self, limit=10):
         rows = list(self.query.limit(limit))
@@ -62,6 +67,8 @@ class DBWorker:
 
     @property
     def extracted_events(self):
+        self._generate_events()
+
         columns = [str(col['expr']) for col in self.query.column_descriptions]
 
         for row in self.query:

@@ -1,6 +1,6 @@
 import requests
 import json
-from ..config import settings
+from src.config import settings
 
 
 def send_batch_events(events):
