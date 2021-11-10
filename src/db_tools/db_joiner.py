@@ -2,6 +2,7 @@ from sqlalchemy import MetaData
 from sqlalchemy.orm import Session
 
 from .db_session import DBSession
+from .common_functions import get_join_column, get_table_relations
 
 
 class DBJoiner:
@@ -17,11 +18,6 @@ class DBJoiner:
 
         self.main_table = self.tables[users_table_name]
 
-        self.join_order = []
-        self.columns = []
-
-        self.create_join_order_and_parse_columns()
-
     def add_backrefs(self):
         for table in self.tables.values():
             for key in table.foreign_keys:
@@ -30,57 +26,34 @@ class DBJoiner:
                 except AttributeError:
                     key.column.table._nodes = [table]
 
-    @staticmethod
-    def get_table_relations(table):
-        related = set()
-
-        _nodes = getattr(table, '_nodes', [])
-        related.update(_nodes)
-
-        foreign = [key.column.table for key in table.foreign_keys]
-        related.update(foreign)
-
-        return related
-
-    def create_join_order_and_parse_columns(self):
-        self.join_order = [self.main_table]
-
-        for table in self.join_order:
-            for relat in self.get_table_relations(table):
-                if relat not in self.join_order:
-                    self.join_order.append(relat)
-
-        temp_columns = [[y for y in x.columns if not y.foreign_keys] for x in self.join_order]
-        for col_list in temp_columns:
-            self.columns.extend(col_list)
-
     def join_all(self):
-        self.create_join_order_and_parse_columns()
+        joined = [self.main_table]
+        join_pipe = []
 
-        with Session(self.engine) as session:
-            query = session.query(*self.columns)
+        for table in joined:
+            for relation in get_table_relations(table):
+                if relation in joined:
+                    continue
 
-            joined = [self.main_table]
+                joined.append(relation)
+                join_pipe.append((relation, get_join_column(table, relation)))
 
-            for table in self.join_order:
-                for relation in self.get_table_relations(table):
-                    if relation in joined:
-                        continue
+        columns = []
 
-                    foreign_keys = relation.foreign_keys
+        temp_columns = [[y for y in x.columns if not y.foreign_keys] for x in joined]
+        for col_list in temp_columns:
+            columns.extend(col_list)
 
-                    if foreign_keys:
-                        use_column = [(key.column, key.parent) for key in foreign_keys if
-                                      key.column.table is table].pop()
-                    else:
-                        self_foreign_keys = table.foreign_keys
-                        use_column = [(key.parent, key.column) for key in self_foreign_keys if
-                                      key.column.table is relation].pop()
-
-                    joined.append(relation)
-                    query = query.join(relation, use_column[0] == use_column[1])
-
-            return query
+        return self.proceed_join_pipe(join_pipe, columns)
 
     def join_by_pairs(self):
         pass
+
+    def proceed_join_pipe(self, join_pipe, columns):
+        with Session(self.engine) as session:
+            query = session.query(*columns)
+
+            for relation, use_column in join_pipe:
+                query = query.join(relation, use_column[0] == use_column[1])
+
+        return query

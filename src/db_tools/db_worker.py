@@ -53,6 +53,7 @@ class DBWorker:
         ])
         print(t.draw())
 
+    # TODO KM: events from any join types
     def _generate_events(self):
         columns = self.query.column_descriptions
         group_columns = [(str(col_desc['expr']).split('.')[0], col_desc) for col_desc in columns]
