@@ -44,16 +44,29 @@ class DBJoiner:
         for col_list in temp_columns:
             columns.extend(col_list)
 
-        return self.proceed_join_pipe(join_pipe, columns)
+        return self.proceed_join_pipe([join_pipe], [columns])
 
     def join_by_pairs(self):
-        pass
+        join_pipe = []
+        columns = []
+
+        possible_pairs = get_table_relations(self.main_table)
+
+        for table in possible_pairs:
+            join_pipe.append([(table, get_join_column(self.main_table, table))])
+            single_columns = []
+            single_columns.extend(self.main_table.columns)
+            single_columns.extend(table.columns)
+            columns.append(single_columns)
+
+        return self.proceed_join_pipe(join_pipe, columns)
 
     def proceed_join_pipe(self, join_pipe, columns):
         with Session(self.engine) as session:
-            query = session.query(*columns)
+            for single_join_pipe, single_columns in zip(join_pipe, columns):
+                query = session.query(*single_columns)
 
-            for relation, use_column in join_pipe:
-                query = query.join(relation, use_column[0] == use_column[1])
+                for relation, use_column in single_join_pipe:
+                    query = query.join(relation, use_column[0] == use_column[1])
 
-        return query
+                yield query
