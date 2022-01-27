@@ -63,8 +63,19 @@ class DBWorker:
 
             possible_dates = {datetime, date, time}
 
-            all_id_columns = [str(col['expr']) for col in filter(lambda x: x['type'].python_type == int, column_descriptions)]
-            all_date_columns = [str(col['expr']) for col in filter(lambda x: x['type'].python_type in possible_dates, column_descriptions)]
+            def filter_by_type(needed_types):
+                def inner(column) -> bool:
+                    try:
+                        if column['type'].python_type in needed_types:
+                            return True
+                    except NotImplementedError:
+                        pass
+
+                    return False
+                return inner
+
+            all_id_columns = [str(col['expr']) for col in filter(filter_by_type([int]), column_descriptions)]
+            all_date_columns = [str(col['expr']) for col in filter(filter_by_type(possible_dates), column_descriptions)]
 
             user_properties_columns = list(filter(
                 lambda col: col not in [*all_id_columns, *all_date_columns],
@@ -78,7 +89,7 @@ class DBWorker:
                     continue
 
                 event_properties_columns = list(filter(
-                    lambda col: col not in [*all_id_columns, *all_date_columns],
+                    lambda col: col not in [*all_date_columns],
                     columns_in_table
                 ))
 

@@ -1,16 +1,14 @@
 # TODO KM: refactor this
 def get_join_column(first_table, second_table):
     foreign_keys = second_table.foreign_keys
+    use_columns = [(key.column, key.parent) for key in foreign_keys if key.column.table is first_table]
 
-    if foreign_keys:
-        use_column = [(key.column, key.parent) for key in foreign_keys if
-                      key.column.table is first_table].pop()
-    else:
+    if not use_columns:
         self_foreign_keys = first_table.foreign_keys
-        use_column = [(key.parent, key.column) for key in self_foreign_keys if
-                      key.column.table is second_table].pop()
+        use_columns = [(key.parent, key.column) for key in self_foreign_keys if key.column.table is second_table]
 
-    return use_column
+    return use_columns.pop()
+
 
 def get_table_relations(table):
     related = set()

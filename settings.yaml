@@ -1,9 +1,9 @@
 ---
 used_dbms: "mysql"
 dbms_host: "localhost"
-database: "employees"
-users_table: "employees"
-user_id_column: "emp_no"
+database: "sakila"
+users_table: "customer"
+user_id_column: "customer_id"
 endpoint_api: "amplitude"
 
 join_mode: "pairs"
