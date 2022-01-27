@@ -5,3 +5,5 @@ database: "employees"
 users_table: "employees"
 user_id_column: "emp_no"
 endpoint_api: "amplitude"
+
+join_mode: "pairs"

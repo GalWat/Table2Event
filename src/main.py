@@ -5,7 +5,7 @@ from pprint import pprint
 from src.config import settings
 from src.db_tools import DBWorker
 
-db = DBWorker(settings.users_table, settings.user_id_column)
+db = DBWorker()
 # db.print_query()
 
 # print(list(db.extracted_events))

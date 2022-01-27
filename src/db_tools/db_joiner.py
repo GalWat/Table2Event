@@ -1,18 +1,30 @@
+from enum import Enum
+
 from sqlalchemy import MetaData
 from sqlalchemy.orm import Session
 
 from .db_session import DBSession
 from .common_functions import get_join_column, get_table_relations
+from src.config import settings
+
+
+class JoinModes(str, Enum):
+    ALL = 'all'
+    PAIRS = 'pairs'
 
 
 class DBJoiner:
-    def __init__(self, users_table_name):
+    def __init__(self):
+        users_table_name = settings.users_table
+
+        self.join_modes = JoinModes
+
         self.engine = DBSession.create_engine()
 
         self.meta = MetaData()
         self.meta.reflect(bind=self.engine)
 
-        # TODO KM: set meta for testing
+        # tables in meta may have different order from launch to launch
         self.tables = self.meta.tables
         self.add_backrefs()
 
@@ -25,6 +37,16 @@ class DBJoiner:
                     key.column.table._nodes.append(table)
                 except AttributeError:
                     key.column.table._nodes = [table]
+
+    def join(self):
+        join_mode = settings.join_mode
+
+        if join_mode == JoinModes.ALL:
+            return self.join_all()
+        elif join_mode == JoinModes.PAIRS:
+            return self.join_by_pairs()
+        else:
+            raise AttributeError(f":join_mode: must be one of {[e for e in JoinModes]}")
 
     def join_all(self):
         joined = [self.main_table]

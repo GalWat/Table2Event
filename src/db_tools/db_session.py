@@ -17,5 +17,5 @@ class DBSession:
             f'{settings.dbms_host}'
             f'/'
             f'{settings.database}',
-            echo=True
+            echo=False
         )
