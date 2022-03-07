@@ -1,9 +1,9 @@
+from sqlalchemy import MetaData, create_engine
+from sqlalchemy.orm import Session
 from ..config import settings
-from sqlalchemy import create_engine
-from sqlalchemy import MetaData
 
 
-class DBSession:
+class DBConnection:
     def __init__(self):
         self.engine = self.create_engine()
 
@@ -23,3 +23,8 @@ class DBSession:
             f'{settings.database}',
             echo=False
         )
+
+    def execute(self, *args, **kwargs):
+        with Session(self.engine) as session:
+            return session.execute(*args, **kwargs)
+
