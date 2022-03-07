@@ -1,9 +1,10 @@
 from enum import Enum
 
-from sqlalchemy import MetaData
-from sqlalchemy.orm import Session
 
-from .db_session import DBSession
+from sqlalchemy.orm import Session
+from sqlalchemy.ext.automap import automap_base
+
+
 from .common_functions import get_join_column, get_table_relations
 from src.config import settings
 
@@ -14,21 +15,24 @@ class JoinModes(str, Enum):
 
 
 class DBJoiner:
-    def __init__(self):
+    def __init__(self, db_session):
         users_table_name = settings.users_table
 
         self.join_modes = JoinModes
 
-        self.engine = DBSession.create_engine()
+        self.engine = db_session.engine
+        self.meta = db_session.meta
 
-        self.meta = MetaData()
-        self.meta.reflect(bind=self.engine)
+        self.base = automap_base(metadata=self.meta)
+        self.base.prepare()
 
         # tables in meta may have different order from launch to launch
         self.tables = self.meta.tables
         self.add_backrefs()
 
         self.main_table = self.tables[users_table_name]
+
+        self.tables_to_watch = []
 
     def add_backrefs(self):
         for table in self.tables.values():
@@ -46,7 +50,7 @@ class DBJoiner:
         elif join_mode == JoinModes.PAIRS:
             return self.join_by_pairs()
         else:
-            raise AttributeError(f":join_mode: must be one of {[e for e in JoinModes]}")
+            raise AttributeError(f":join_mode: must be one of {list(JoinModes)}")
 
     def join_all(self):
         joined = [self.main_table]
@@ -85,10 +89,15 @@ class DBJoiner:
 
     def proceed_join_pipe(self, join_pipe, columns):
         with Session(self.engine) as session:
+            queries = []
+
             for single_join_pipe, single_columns in zip(join_pipe, columns):
                 query = session.query(*single_columns)
 
                 for relation, use_column in single_join_pipe:
                     query = query.join(relation, use_column[0] == use_column[1])
+                    self.tables_to_watch.append(relation)
 
-                yield query
+                queries.append(query)
+
+            return queries

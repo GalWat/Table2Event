@@ -1,10 +1,14 @@
 from ..config import settings
 from sqlalchemy import create_engine
+from sqlalchemy import MetaData
 
 
 class DBSession:
     def __init__(self):
-        pass
+        self.engine = self.create_engine()
+
+        self.meta = MetaData()
+        self.meta.reflect(bind=self.engine)
 
     @staticmethod
     def create_engine():

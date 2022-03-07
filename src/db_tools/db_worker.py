@@ -25,16 +25,19 @@ class EventTemplate:
 
 
 class DBWorker:
-    def __init__(self):
+    def __init__(self, db_session):
         users_table_name = settings.users_table
         user_id_column_name = settings.user_id_column
 
-        self.joiner = DBJoiner()
+        self.joiner = DBJoiner(db_session)
 
         self.user_id_column = f'{users_table_name}.{user_id_column_name}'
         self.main_table_name = users_table_name
 
         self.queries = list(self.joiner.join())
+
+    def get_tables_to_watch(self):
+        return [self.joiner.base.classes[table.name] for table in self.joiner.tables_to_watch]
 
     def print_query(self, limit=10):
         for query in self.queries:
